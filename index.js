@@ -1,17 +1,14 @@
-var Discord = require("discord.js");
-var fs = require("fs");
-var client = new Discord.Client();
+const Discord = require("discord.js");
+const fs = require("fs");
+const client = new Discord.Client();
 
-var guilds;
+let guilds = require('./users.json');
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.username}#${client.user.discriminator}`);
-    guilds = JSON.parse(fs.readFileSync('users.json', 'utf8')) ? JSON.parse(fs.readFileSync('users.json', 'utf8')) : {};
-    client.guilds.array().forEach((guild) => {
-        if(!guilds[guild.id]) {
-            guilds[guild.id] = {};
-        }
-    });
+    if(!guilds) {
+        guilds = {};
+    }
 });
 
 client.on('message', msg => {
@@ -47,32 +44,44 @@ client.on('message', msg => {
     }
 });
 
+function updateGuilds() {
+    client.guilds.array().forEach((guild) => {
+        if(!guilds[guild.id]) {
+            guilds[guild.id] = {};
+        }
+    });
+}
+
 function get(guild) {
-    var group = guilds[guild.id];
-    var date = new Date();
-    var hour = date.getUTCHours();
-    var minutes = date.getUTCMinutes();
-    var keys = Object.keys(group);
-    var temp = [];
+    updateGuilds();
+    let group = guilds[guild.id];
+    let date = new Date();
+    let hour = date.getUTCHours();
+    let keys = Object.keys(group);
+    let temp = [];
     keys.forEach((k) => {
         var val = group[k]; // -6
-        var tHour = hour + val;
-        if(tHour >= 24) {
-            tHour -= 24;
-        } else if(tHour < 0) {
-            tHour = 24 + tHour;
+        if(val !== null) {
+            var tHour = hour + val;
+            if(tHour >= 24) {
+                tHour -= 24;
+            } else if(tHour < 0) {
+                tHour = 24 + tHour;
+            }
+            temp.push(`${k}: ${tHour}:${date.getUTCMinutes()}`);
         }
-        temp.push(`${k}: ${tHour}:${minutes}`);
     });
     return temp.join('\n');
 }
 
 function add(guild, username, utcdiff) {
+    updateGuilds();
     guilds[guild.id][username] = utcdiff;
     fs.writeFileSync('users.json', JSON.stringify(guilds));
 }
 
 function remove(guild, username) {
+    updateGuilds();
     if(guilds[guild.id][username]) {
         guilds[guild.id][username] = null;
     }
@@ -80,13 +89,11 @@ function remove(guild, username) {
 }
 
 function help() {
-    return [
-        'To activate time bot, type \'time bot\' or \'timebot\'',
-        'To display help, type \'timebot help\'',
-        'To add users to the time bot list, type \'timebot add Username TimeDifferenceFromUTC\'',
-        'To edit a users time difference, just \"add\" them again',
-        'To remove a user from the time bot list, type \'timebot remove Username\''
-    ].join('\n');
+    return '\n        To activate time bot, type \'time bot\' or \'timebot\'\n\
+        To display help, type \'timebot help\'\n\
+        To add users to the time bot list, type \'timebot add Username TimeDifferenceFromUTC\'\n\
+        To edit a users time difference, just \"add\" them again\n\
+        To remove a user from the time bot list, type \'timebot remove Username\'';
 }
 
-client.login('MjU0MjI2ODkzNjI3MzI2NDY1.CyL_AA.zsC8DSmr12BQFxD3NVcunDj1T0k');
+client.login(require('./token.json').token);

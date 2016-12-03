@@ -9,6 +9,8 @@ Desktop.ini
 $RECYCLE.BIN/
 
 node_modules/
+token.json
+users.json
 
 # Windows Installer files
 *.cab
